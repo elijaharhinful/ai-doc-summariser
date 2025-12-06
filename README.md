@@ -15,7 +15,9 @@ AI-powered document processing API built with NestJS, OpenRouter, and MinIO. Upl
 ## Prerequisites
 
 - Node.js 18+
-- Docker and Docker Compose
+- Docker and Docker Compose (Optional if running services locally)
+- PostgreSQL (If not using Docker)
+- MinIO (If not using Docker)
 - OpenRouter API key ([Get one here](https://openrouter.ai/keys))
 
 ## Setup
@@ -60,10 +62,98 @@ MAX_FILE_SIZE=5242880
 
 ### 3. Start Services
 
-```bash
-# Start PostgreSQL and MinIO
-docker-compose up -d
+### 3. Start Services
 
+Choose one of the following options based on your environment:
+
+#### Option A: Full Docker Setup (Recommended)
+If you don't have PostgreSQL or MinIO installed, run both via Docker:
+
+```bash
+docker-compose up -d
+```
+
+#### Option B: Mixed Setup (e.g., Local Postgres + Docker MinIO)
+If you already have PostgreSQL installed locally but need MinIO:
+
+1. Update `.env` with your **local** PostgreSQL credentials:
+   ```env
+   DATABASE_HOST=localhost
+   DATABASE_PORT=5432
+   DATABASE_USER=your_local_user
+   DATABASE_PASSWORD=your_local_password
+   ```
+2. Start ONLY MinIO using Docker:
+   ```bash
+   docker-compose up -d minio
+   ```
+
+#### Option C: Manual Setup (No Docker)
+If you have both PostgreSQL and MinIO installed locally:
+
+1. Ensure both services are running.
+2. Update `.env` to match your local configurations for both Database and MinIO.
+
+##### Installing MinIO Locally
+
+If you don't have MinIO installed, here's how to set it up:
+
+**Windows:**
+```powershell
+# Download MinIO executable
+wget https://dl.min.io/server/minio/release/windows-amd64/minio.exe -O minio.exe
+
+# Create a data directory
+mkdir C:\minio-data
+
+# Start MinIO server
+.\minio.exe server C:\minio-data --console-address ":9001"
+```
+
+**macOS:**
+```bash
+# Using Homebrew
+brew install minio/stable/minio
+
+# Create a data directory
+mkdir ~/minio-data
+
+# Start MinIO server
+minio server ~/minio-data --console-address ":9001"
+```
+
+**Linux:**
+```bash
+# Download MinIO binary
+wget https://dl.min.io/server/minio/release/linux-amd64/minio
+chmod +x minio
+sudo mv minio /usr/local/bin/
+
+# Create a data directory
+mkdir ~/minio-data
+
+# Start MinIO server
+minio server ~/minio-data --console-address ":9001"
+```
+
+**Default Credentials:**
+- Access Key: `minioadmin`
+- Secret Key: `minioadmin`
+- API Endpoint: `http://localhost:9000`
+- Console: `http://localhost:9001`
+
+**Note:** For production, change the default credentials by setting environment variables:
+```bash
+export MINIO_ROOT_USER=your_username
+export MINIO_ROOT_PASSWORD=your_password
+```
+
+After starting MinIO, update your `.env` file accordingly.
+
+#### Start the Application
+Once your backend services (DB & MinIO) are running:
+
+```bash
 # Start API (development)
 npm run start:dev
 
