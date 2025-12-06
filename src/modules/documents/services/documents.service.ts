@@ -9,13 +9,11 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import * as pdfParse from 'pdf-parse';
 import { Document } from '../entities/document.entity';
 import { StorageService } from '../../storage/storage.service';
 import { LlmService } from '../../llm/llm.service';
 import { DocumentResponseDto } from '../dto/document-response.dto';
 import { AnalysisResponseDto } from '../dto/analysis-response.dto';
-
 @Injectable()
 export class DocumentsService {
   private readonly logger = new Logger(DocumentsService.name);
@@ -28,7 +26,7 @@ export class DocumentsService {
     private llmService: LlmService,
     private configService: ConfigService,
   ) {
-    this.maxFileSize = this.configService.get<number>('maxFileSize');
+    this.maxFileSize = this.configService.get<number>('maxFileSize') || 5242880;
   }
 
   async uploadDocument(file: Express.Multer.File): Promise<DocumentResponseDto> {
@@ -142,11 +140,39 @@ export class DocumentsService {
 
   private async extractTextFromPdf(buffer: Buffer): Promise<string> {
     try {
-      const data = await pdfParse(buffer);
-      return data.text;
+      this.logger.debug(`Attempting to parse PDF, buffer size: ${buffer.length} bytes`);
+      
+      // Using pdfjs-dist (Mozilla's PDF.js) for better reliability
+      const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+      
+      // Load the PDF document
+      const loadingTask = pdfjsLib.getDocument({
+        data: new Uint8Array(buffer),
+        useSystemFonts: true,
+      });
+      
+      const pdfDocument = await loadingTask.promise;
+      const numPages = pdfDocument.numPages;
+      this.logger.debug(`PDF loaded successfully, pages: ${numPages}`);
+      
+      // Extract text from all pages
+      let fullText = '';
+      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+        const page = await pdfDocument.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        fullText += pageText + '\n';
+      }
+      
+      this.logger.debug(`PDF parsed successfully, text length: ${fullText.length}`);
+      return fullText.trim();
     } catch (error) {
       this.logger.error(`Error extracting text from PDF: ${error.message}`);
-      throw new BadRequestException('Failed to extract text from PDF');
+      this.logger.error(`Error stack: ${error.stack}`);
+      this.logger.error(`Error type: ${typeof error}, Error: ${JSON.stringify(error, null, 2)}`);
+      throw new BadRequestException(`Failed to extract text from PDF: ${error.message}`);
     }
   }
 
