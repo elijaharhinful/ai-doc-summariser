@@ -13,25 +13,25 @@ import { DocumentResponseDto } from '../dto/document-response.dto';
 export function UploadDocumentDocs() {
   return applyDecorators(
     ApiOperation({
-      summary: 'Upload a PDF document',
+      summary: 'Upload a PDF or DOCX document',
       description: `
-        Upload a PDF document for text extraction and storage.
+        Upload a PDF or DOCX document for text extraction and storage.
         
         **Process:**
-        1. Validates file type (PDF only) and size (max 5MB)
-        2. Extracts text content from the PDF
+        1. Validates file type (PDF or DOCX) and size (max 5MB)
+        2. Extracts text content from the document
         3. Stores the raw file in MinIO object storage
         4. Saves document metadata and extracted text in the database
         
         **Limitations:**
         - Maximum file size: 5MB
-        - Supported formats: PDF only
-        - File must contain extractable text (scanned PDFs without OCR may not work)
+        - Supported formats: PDF, DOCX
+        - File must contain extractable text (scanned documents without OCR may not work)
       `,
     }),
     ApiConsumes('multipart/form-data'),
     ApiBody({
-      description: 'PDF file to upload',
+      description: 'PDF or DOCX file to upload',
       schema: {
         type: 'object',
         required: ['file'],
@@ -39,7 +39,7 @@ export function UploadDocumentDocs() {
           file: {
             type: 'string',
             format: 'binary',
-            description: 'PDF file (max 5MB)',
+            description: 'PDF or DOCX file (max 5MB)',
           },
         },
       },
@@ -54,7 +54,7 @@ export function UploadDocumentDocs() {
           originalName: 'invoice-2024.pdf',
           mimeType: 'application/pdf',
           size: 245678,
-          extractedText: 'INVOICE\n\nDate: January 15, 2024\nFrom: Acme Corp...',
+          extractedText: 'INVOICE\\n\\nDate: January 15, 2024\\nFrom: Acme Corp...',
           summary: null,
           documentType: null,
           metadata: null,
@@ -85,11 +85,11 @@ export function UploadDocumentDocs() {
       },
     }),
     ApiUnsupportedMediaTypeResponse({
-      description: 'File type not supported (only PDF allowed)',
+      description: 'File type not supported (only PDF and DOCX allowed)',
       schema: {
         example: {
           statusCode: 415,
-          message: 'Only PDF files are supported',
+          message: 'Only PDF and DOCX files are supported',
           error: 'Unsupported Media Type',
         },
       },

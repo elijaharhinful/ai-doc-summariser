@@ -1,10 +1,10 @@
 # AI Document Summarizer API
 
-AI-powered document processing API built with NestJS, OpenRouter, and MinIO. Upload PDFs, extract text, and get intelligent summaries with metadata extraction.
+AI-powered document processing API built with NestJS, OpenRouter, and MinIO. Upload PDF and DOCX files, extract text, and get intelligent summaries with metadata extraction.
 
 ## Features
 
-- PDF upload and text extraction (using PDF.js)
+- PDF and DOCX upload and text extraction (using PDF.js and Mammoth)
 - AI-powered document analysis and summarization
 - Automatic document type classification (invoice, CV, report, contract, etc.)
 - Smart metadata extraction

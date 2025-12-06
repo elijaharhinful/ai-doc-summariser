@@ -43,17 +43,23 @@ export class DocumentsService {
     }
 
     // Check file type
-    if (file.mimetype !== 'application/pdf') {
-      throw new UnsupportedMediaTypeException('Only PDF files are supported');
+    const supportedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!supportedTypes.includes(file.mimetype)) {
+      throw new UnsupportedMediaTypeException('Only PDF and DOCX files are supported');
     }
 
     try {
-      // Extract text from PDF
-      const extractedText = await this.extractTextFromPdf(file.buffer);
+      // Extract text based on file type
+      let extractedText: string;
+      if (file.mimetype === 'application/pdf') {
+        extractedText = await this.extractTextFromPdf(file.buffer);
+      } else {
+        extractedText = await this.extractTextFromDocx(file.buffer);
+      }
 
       if (!extractedText || extractedText.trim().length === 0) {
         throw new BadRequestException(
-          'Could not extract text from PDF. The file may be empty or contain only images.',
+          'Could not extract text from document. The file may be empty or contain only images.',
         );
       }
 
@@ -173,6 +179,23 @@ export class DocumentsService {
       this.logger.error(`Error stack: ${error.stack}`);
       this.logger.error(`Error type: ${typeof error}, Error: ${JSON.stringify(error, null, 2)}`);
       throw new BadRequestException(`Failed to extract text from PDF: ${error.message}`);
+    }
+  }
+
+  private async extractTextFromDocx(buffer: Buffer): Promise<string> {
+    try {
+      this.logger.debug(`Attempting to parse DOCX, buffer size: ${buffer.length} bytes`);
+      
+      // Using mammoth to extract text from DOCX
+      const mammoth = require('mammoth');
+      const result = await mammoth.extractRawText({ buffer });
+      
+      this.logger.debug(`DOCX parsed successfully, text length: ${result.value.length}`);
+      return result.value.trim();
+    } catch (error) {
+      this.logger.error(`Error extracting text from DOCX: ${error.message}`);
+      this.logger.error(`Error stack: ${error.stack}`);
+      throw new BadRequestException(`Failed to extract text from DOCX: ${error.message}`);
     }
   }
 
