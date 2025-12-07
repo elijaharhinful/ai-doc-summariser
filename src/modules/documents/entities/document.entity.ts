@@ -36,7 +36,7 @@ export class Document {
   documentType: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 
   @Column({ default: false })
   analyzed: boolean;

@@ -12,27 +12,7 @@ export function GetDocumentDocs() {
     ApiOperation({
       summary: 'Get document details',
       description: `
-        Retrieve complete information about a document including:
-        - File metadata (name, size, type, upload date)
-        - Extracted text content
-        - AI analysis results (if analyzed)
-          - Summary
-          - Document type
-          - Extracted metadata
-        
-        **Use Cases:**
-        - View document details after upload
-        - Check analysis status and results
-        - Retrieve extracted text for further processing
-        - Access structured metadata for integration
-        
-        **Response includes:**
-        - All file information
-        - Full extracted text
-        - AI-generated summary (if analyzed)
-        - Document classification (if analyzed)
-        - Structured metadata (if analyzed)
-      `,
+        Retrieve complete information about a document`,
     }),
     ApiParam({
       name: 'id',

@@ -13,25 +13,7 @@ export function AnalyzeDocumentDocs() {
     ApiOperation({
       summary: 'Analyze a document using AI',
       description: `
-        Analyze an uploaded document using OpenRouter's LLM to extract insights.
-        
-        **Process:**
-        1. Retrieves the document and its extracted text from the database
-        2. Sends the text to OpenRouter's LLM (GPT-4o-mini or configured model)
-        3. AI generates:
-           - A concise summary of the document
-           - Document type classification (invoice, CV, report, letter, etc.)
-           - Extracted metadata (dates, names, amounts, etc.)
-        4. Saves the analysis results to the database
-        
-        **AI Capabilities:**
-        - Summarizes documents in 2-3 sentences
-        - Classifies document types with high accuracy
-        - Extracts structured metadata based on document type
-        - Handles various document formats and languages
-        
-        **Note:** The document must be uploaded first using the /documents/upload endpoint.
-      `,
+        Analyze an uploaded document using OpenRouter's LLM to extract insights.`,
     }),
     ApiParam({
       name: 'id',

@@ -5,7 +5,7 @@ import OpenAI from 'openai';
 export interface DocumentAnalysis {
   summary: string;
   documentType: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 @Injectable()
@@ -75,8 +75,10 @@ For different document types, extract:
 
       // Parse the JSON response
       const analysis = this.parseAnalysisResponse(responseText);
-      this.logger.log(`Document analyzed successfully as ${analysis.documentType}`);
-      
+      this.logger.log(
+        `Document analyzed successfully as ${analysis.documentType}`,
+      );
+
       return analysis;
     } catch (error) {
       this.logger.error(`Error analyzing document: ${error.message}`);
@@ -86,8 +88,9 @@ For different document types, extract:
 
   private buildAnalysisPrompt(text: string): string {
     // Truncate text if too long (keep first 4000 chars for context)
-    const truncatedText = text.length > 4000 ? text.substring(0, 4000) + '...' : text;
-    
+    const truncatedText =
+      text.length > 4000 ? text.substring(0, 4000) + '...' : text;
+
     return `Analyze the following document and provide a summary, document type, and extracted metadata:
 
 ${truncatedText}`;
@@ -98,7 +101,9 @@ ${truncatedText}`;
       // Remove markdown code blocks if present
       let cleanedText = responseText.trim();
       if (cleanedText.startsWith('```json')) {
-        cleanedText = cleanedText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        cleanedText = cleanedText
+          .replace(/```json\n?/g, '')
+          .replace(/```\n?/g, '');
       } else if (cleanedText.startsWith('```')) {
         cleanedText = cleanedText.replace(/```\n?/g, '');
       }
@@ -118,7 +123,7 @@ ${truncatedText}`;
     } catch (error) {
       this.logger.error(`Error parsing LLM response: ${error.message}`);
       this.logger.debug(`Raw response: ${responseText}`);
-      
+
       // Fallback response
       return {
         summary: 'Unable to generate summary',

@@ -9,11 +9,13 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
+import { isUUID } from 'class-validator';
 import { Document } from '../entities/document.entity';
 import { StorageService } from '../../storage/storage.service';
 import { LlmService } from '../../llm/llm.service';
 import { DocumentResponseDto } from '../dto/document-response.dto';
 import { AnalysisResponseDto } from '../dto/analysis-response.dto';
+
 @Injectable()
 export class DocumentsService {
   private readonly logger = new Logger(DocumentsService.name);
@@ -29,13 +31,19 @@ export class DocumentsService {
     this.maxFileSize = this.configService.get<number>('maxFileSize') || 5242880;
   }
 
-  async uploadDocument(file: Express.Multer.File): Promise<DocumentResponseDto> {
+  async uploadDocument(
+    file: Express.Multer.File,
+  ): Promise<DocumentResponseDto> {
     // Validate file
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
 
     // Check file size
+    if (file.size === 0) {
+      throw new BadRequestException('This document is empty or has no content');
+    }
+
     if (file.size > this.maxFileSize) {
       throw new PayloadTooLargeException(
         `File size exceeds maximum limit of ${this.maxFileSize / 1024 / 1024}MB`,
@@ -43,9 +51,14 @@ export class DocumentsService {
     }
 
     // Check file type
-    const supportedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const supportedTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
     if (!supportedTypes.includes(file.mimetype)) {
-      throw new UnsupportedMediaTypeException('Only PDF and DOCX files are supported');
+      throw new UnsupportedMediaTypeException(
+        'Only PDF and DOCX files are supported',
+      );
     }
 
     try {
@@ -92,6 +105,10 @@ export class DocumentsService {
   }
 
   async analyzeDocument(id: string): Promise<AnalysisResponseDto> {
+    if (!isUUID(id)) {
+      throw new BadRequestException('Invalid document ID format');
+    }
+
     const document = await this.documentRepository.findOne({ where: { id } });
 
     if (!document) {
@@ -127,6 +144,10 @@ export class DocumentsService {
   }
 
   async getDocument(id: string): Promise<DocumentResponseDto> {
+    if (!isUUID(id)) {
+      throw new BadRequestException('Invalid document ID format');
+    }
+
     const document = await this.documentRepository.findOne({ where: { id } });
 
     if (!document) {
@@ -146,56 +167,79 @@ export class DocumentsService {
 
   private async extractTextFromPdf(buffer: Buffer): Promise<string> {
     try {
-      this.logger.debug(`Attempting to parse PDF, buffer size: ${buffer.length} bytes`);
-      
+      this.logger.debug(
+        `Attempting to parse PDF, buffer size: ${buffer.length} bytes`,
+      );
+
       // Using pdfjs-dist (Mozilla's PDF.js) for better reliability
       const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
-      
+
       // Load the PDF document
       const loadingTask = pdfjsLib.getDocument({
         data: new Uint8Array(buffer),
         useSystemFonts: true,
       });
-      
+
       const pdfDocument = await loadingTask.promise;
       const numPages = pdfDocument.numPages;
       this.logger.debug(`PDF loaded successfully, pages: ${numPages}`);
-      
+
       // Extract text from all pages
       let fullText = '';
       for (let pageNum = 1; pageNum <= numPages; pageNum++) {
         const page = await pdfDocument.getPage(pageNum);
         const textContent = await page.getTextContent();
         const pageText = textContent.items
-          .map((item: any) => item.str)
+          .map((item: unknown) => (item as { str?: string }).str ?? '')
           .join(' ');
         fullText += pageText + '\n';
       }
-      
-      this.logger.debug(`PDF parsed successfully, text length: ${fullText.length}`);
+
+      this.logger.debug(
+        `PDF parsed successfully, text length: ${fullText.length}`,
+      );
       return fullText.trim();
     } catch (error) {
       this.logger.error(`Error extracting text from PDF: ${error.message}`);
       this.logger.error(`Error stack: ${error.stack}`);
-      this.logger.error(`Error type: ${typeof error}, Error: ${JSON.stringify(error, null, 2)}`);
-      throw new BadRequestException(`Failed to extract text from PDF: ${error.message}`);
+      this.logger.error(
+        `Error type: ${typeof error}, Error: ${JSON.stringify(error, null, 2)}`,
+      );
+      throw new BadRequestException(
+        `Failed to extract text from PDF: ${error.message}`,
+      );
     }
   }
 
   private async extractTextFromDocx(buffer: Buffer): Promise<string> {
     try {
-      this.logger.debug(`Attempting to parse DOCX, buffer size: ${buffer.length} bytes`);
-      
+      this.logger.debug(
+        `Attempting to parse DOCX, buffer size: ${buffer.length} bytes`,
+      );
+
       // Using mammoth to extract text from DOCX
       const mammoth = require('mammoth');
       const result = await mammoth.extractRawText({ buffer });
-      
-      this.logger.debug(`DOCX parsed successfully, text length: ${result.value.length}`);
+
+      this.logger.debug(
+        `DOCX parsed successfully, text length: ${result.value.length}`,
+      );
       return result.value.trim();
     } catch (error) {
+      if (
+        error.message.includes('End of data reached') ||
+        error.message.includes('Corrupted zip')
+      ) {
+        this.logger.warn(`Empty or corrupted DOCX file: ${error.message}`);
+        throw new BadRequestException(
+          'This document is empty or has no content',
+        );
+      }
       this.logger.error(`Error extracting text from DOCX: ${error.message}`);
       this.logger.error(`Error stack: ${error.stack}`);
-      throw new BadRequestException(`Failed to extract text from DOCX: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to extract text from DOCX: ${error.message}`,
+      );
     }
   }
 

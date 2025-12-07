@@ -25,7 +25,7 @@ export class AnalysisResponseDto {
       invoiceNumber: 'INV-2024-001',
     },
   })
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 
   @ApiProperty({
     description: 'Document ID',

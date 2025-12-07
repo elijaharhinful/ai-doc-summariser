@@ -54,7 +54,7 @@ export class DocumentResponseDto {
     },
     nullable: true,
   })
-  metadata: Record<string, any> | null;
+  metadata: Record<string, unknown> | null;
 
   @ApiProperty({
     description: 'Whether the document has been analyzed by AI',

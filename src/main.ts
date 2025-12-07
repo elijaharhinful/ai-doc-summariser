@@ -23,38 +23,10 @@ async function bootstrap() {
     .setTitle('AI Document Summarizer API')
     .setDescription(
       `
-      A powerful API for document processing and AI-powered analysis.
-      
-      **Features:**
-      - Upload PDF documents (max 5MB)
-      - Automatic text extraction
-      - AI-powered document analysis
-      - Document type classification
-      - Metadata extraction
-      - Secure storage with MinIO
-      
-      **Workflow:**
-      1. Upload a PDF using \`POST /documents/upload\`
-      2. Analyze the document using \`POST /documents/{id}/analyze\`
-      3. Retrieve results using \`GET /documents/{id}\`
-      
-      **Supported Document Types:**
-      - Invoices
-      - CVs/Resumes
-      - Reports
-      - Letters
-      - Contracts
-      - And more...
-      `,
+      An API for document processing and AI-powered analysis.`,
     )
     .setVersion('1.0')
     .addTag('Documents', 'Document upload, analysis, and retrieval endpoints')
-    .setContact(
-      'API Support',
-      'https://github.com/yourusername/ai-doc-summarizer',
-      'support@example.com',
-    )
-    .setLicense('MIT', 'https://opensource.org/licenses/MIT')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

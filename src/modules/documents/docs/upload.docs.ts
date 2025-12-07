@@ -16,17 +16,6 @@ export function UploadDocumentDocs() {
       summary: 'Upload a PDF or DOCX document',
       description: `
         Upload a PDF or DOCX document for text extraction and storage.
-        
-        **Process:**
-        1. Validates file type (PDF or DOCX) and size (max 5MB)
-        2. Extracts text content from the document
-        3. Stores the raw file in MinIO object storage
-        4. Saves document metadata and extracted text in the database
-        
-        **Limitations:**
-        - Maximum file size: 5MB
-        - Supported formats: PDF, DOCX
-        - File must contain extractable text (scanned documents without OCR may not work)
       `,
     }),
     ApiConsumes('multipart/form-data'),
